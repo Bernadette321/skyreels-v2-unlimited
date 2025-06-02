@@ -124,4 +124,4 @@ jobs:
           ${{ secrets.DOCKERHUB_USERNAME }}/skyreels-v2:unlimited
           ${{ secrets.DOCKERHUB_USERNAME }}/skyreels-v2:latest
         cache-from: type=gha
-        cache-to: type=gha,mode=max 
+        cache-to: type=gha,mode=max # Updated 2025年 6月 2日 星期一 19时35分36秒 CST
