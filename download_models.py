@@ -26,12 +26,12 @@ def download_skyreels_models():
     """下载SkyReels-V2模型"""
     models = {
         'SkyReels-V2-DF-14B-720P': {
-            'repo_id': 'SkyworkAI/SkyReels-V2-DF-14B-720P',
+            'repo_id': 'Skywork/SkyReels-V2-DF-14B-720P',
             'local_dir': '/app/models/SkyReels-V2-DF-14B-720P',
             'description': 'Diffusion Forcing 720P 模型'
         },
         'SkyReels-V2-I2V-14B-720P': {
-            'repo_id': 'SkyworkAI/SkyReels-V2-I2V-14B-720P', 
+            'repo_id': 'Skywork/SkyReels-V2-I2V-14B-720P', 
             'local_dir': '/app/models/SkyReels-V2-I2V-14B-720P',
             'description': 'Image-to-Video 720P 模型'
         }
