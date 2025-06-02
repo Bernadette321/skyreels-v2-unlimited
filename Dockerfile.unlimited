@@ -56,10 +56,11 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN python -m pip install --upgrade pip setuptools wheel
 
 # 安装PyTorch（适配最新CUDA）
-RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# 修复PyTorch安装 - 多重策略确保成功
+RUN pip install --timeout=1000 --retries=3 torch==2.0.1+cu118 torchvision==0.15.2+cu118 torchaudio==2.0.2+cu118 --index-url https://download.pytorch.org/whl/cu118 || pip install --timeout=1000 --retries=3 torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 || pip install --timeout=1000 --retries=3 torch torchvision torchaudio
 
 # 安装AI和视频处理依赖
-RUN pip install \
+RUN pip install --timeout=600 --retries=3 \
     transformers \
     accelerate \
     diffusers \
@@ -83,7 +84,7 @@ RUN pip install \
     huggingface_hub
 
 # 安装API服务依赖
-RUN pip install \
+RUN pip install --timeout=600 --retries=3 \
     fastapi \
     uvicorn \
     gunicorn \
@@ -95,7 +96,7 @@ RUN pip install \
     requests
 
 # 安装专业音视频处理库
-RUN pip install \
+RUN pip install --timeout=600 --retries=3 \
     ffmpeg-python \
     av \
     decord \
