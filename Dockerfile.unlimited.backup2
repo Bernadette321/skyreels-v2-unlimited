@@ -1,0 +1,167 @@
+# SkyReels V2 Unlimited Docker Image
+# 支持无限制长视频生成的高性能Docker镜像
+
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+
+# 设置环境变量
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV LANG=C.UTF-8
+
+# 无限制模式环境变量
+ENV SKYREELS_UNLIMITED_MODE=true
+ENV SKYREELS_MAX_RESOLUTION=1080p
+ENV SKYREELS_MAX_DURATION=7200
+ENV SKYREELS_ENABLE_4K=true
+ENV SKYREELS_HIGH_QUALITY=true
+
+# 系统依赖
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-dev \
+    python3-pip \
+    git \
+    wget \
+    curl \
+    ffmpeg \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    build-essential \
+    cmake \
+    pkg-config \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libv4l-dev \
+    libxvidcore-dev \
+    libx264-dev \
+    libgtk-3-dev \
+    libatlas-base-dev \
+    gfortran \
+    libfreetype6-dev \
+    libhdf5-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 创建符号链接
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+# 升级pip并安装基础包
+RUN python -m pip install --upgrade pip setuptools wheel
+
+# 安装PyTorch（适配最新CUDA）
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# 安装AI和视频处理依赖
+RUN pip install \
+    transformers \
+    accelerate \
+    diffusers \
+    xformers \
+    opencv-python \
+    opencv-contrib-python \
+    pillow \
+    numpy \
+    scipy \
+    scikit-image \
+    imageio \
+    moviepy \
+    librosa \
+    soundfile \
+    pydub \
+    matplotlib \
+    seaborn \
+    tqdm \
+    tensorboard \
+    wandb \
+    huggingface_hub
+
+# 安装API服务依赖
+RUN pip install \
+    fastapi \
+    uvicorn \
+    gunicorn \
+    pydantic \
+    psutil \
+    aiofiles \
+    python-multipart \
+    httpx \
+    requests
+
+# 安装专业音视频处理库
+RUN pip install \
+    ffmpeg-python \
+    av \
+    decord \
+    albumentations \
+    timm \
+    einops \
+    omegaconf \
+    hydra-core
+
+# 设置工作目录
+WORKDIR /app
+
+# 克隆SkyReels V2代码
+RUN git clone https://github.com/SkyReels/SkyReels-V2.git
+
+# 复制项目文件
+COPY api_server_unlimited.py /app/
+COPY start_unlimited.sh /app/
+COPY requirements_unlimited.txt /app/
+
+# 安装无限制版本专用依赖
+RUN pip install -r /app/requirements_unlimited.txt
+
+# 安装SkyReels V2特定依赖
+RUN cd SkyReels-V2 && \
+    if [ -f requirements.txt ]; then pip install -r requirements.txt; fi && \
+    if [ -f setup.py ]; then pip install -e .; fi
+
+# 创建目录结构
+RUN mkdir -p /app/outputs/{videos,temp,audio,logs} && \
+    mkdir -p /app/cache/{models,diffusers,transformers} && \
+    mkdir -p /app/logs
+
+# 设置权限
+RUN chmod +x /app/start_unlimited.sh && \
+    chmod -R 755 /app/outputs && \
+    chmod -R 755 /app/cache && \
+    chmod -R 755 /app/logs
+
+# GPU优化设置
+ENV CUDA_DEVICE_ORDER=PCI_BUS_ID
+ENV CUDA_VISIBLE_DEVICES=0
+ENV TORCH_CUDA_ARCH_LIST="6.0 6.1 7.0 7.5 8.0 8.6 9.0"
+ENV PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:2048
+
+# 性能优化
+ENV OMP_NUM_THREADS=16
+ENV MKL_NUM_THREADS=16
+ENV NUMBA_NUM_THREADS=16
+
+# 内存优化
+ENV PYTHONHASHSEED=0
+ENV TOKENIZERS_PARALLELISM=false
+
+# 缓存目录
+ENV HF_HOME=/app/cache
+ENV TRANSFORMERS_CACHE=/app/cache
+ENV TORCH_HOME=/app/cache
+ENV HUGGINGFACE_HUB_CACHE=/app/cache
+
+# 暴露端口
+EXPOSE 8000
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# 启动命令
+CMD ["/app/start_unlimited.sh"] 
