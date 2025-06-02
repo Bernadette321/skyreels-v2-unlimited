@@ -1,0 +1,16 @@
+# 修复版 Dockerfile - SkyReels V2 Unlimited
+# 基于原镜像，只替换启动脚本
+
+FROM oliviahayes/skyreels-v2-unlimited:latest
+
+# 替换有bug的启动脚本
+COPY start_unlimited_fixed.sh /app/start_unlimited.sh
+
+# 确保脚本有执行权限
+RUN chmod +x /app/start_unlimited.sh
+
+# 安装bc命令以防万一
+RUN apt-get update && apt-get install -y bc && rm -rf /var/lib/apt/lists/*
+
+# 保持原有的启动命令
+CMD ["/app/start_unlimited.sh"] 

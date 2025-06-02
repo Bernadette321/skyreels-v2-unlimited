@@ -20,6 +20,7 @@ echo "🔥 启动 SkyReels V2 无限制模式..."
 
 echo "🔧 硬件配置:"
 echo "    GPU数量: 1"
+echo "    GPU型号: NVIDIA L40"
 
 # 修复：直接使用nvidia-smi获取VRAM，避免bc命令
 VRAM_MB=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null || echo "49152")
@@ -29,8 +30,6 @@ echo "    总VRAM: ${VRAM_MB}MB"
 TOTAL_RAM_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
 TOTAL_RAM_GB=$((TOTAL_RAM_KB / 1024 / 1024))
 echo "    总RAM: ${TOTAL_RAM_GB}GB"
-
-echo "    GPU型号: NVIDIA L40"
 
 # 简化的VRAM检查，避免bc和复杂的数学运算
 if [ "$VRAM_MB" -lt "20000" ] 2>/dev/null; then
