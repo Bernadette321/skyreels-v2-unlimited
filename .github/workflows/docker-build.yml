@@ -13,7 +13,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: bernadette321/skyreels-v2-unlimited
+  IMAGE_NAME: oliviahayes/skyreels-v2-unlimited
 
 jobs:
   build:
