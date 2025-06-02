@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  skyreels-v2-real:
+    build:
+      context: .
+      dockerfile: Dockerfile.skyreels-real
+    image: oliviahayes/skyreels-v2-real:latest
+    container_name: skyreels-v2-real
+    restart: unless-stopped
+    
+    ports:
+      - "8000:8000"
+    
+    volumes:
+      # 持久化模型存储（避免重复下载）
+      - skyreels_models:/app/models
+      - skyreels_outputs:/app/outputs
+      - skyreels_cache:/app/cache
+      - skyreels_logs:/app/logs
+    
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+      - TOKENIZERS_PARALLELISM=false
+      - HF_HOME=/app/cache
+      - TRANSFORMERS_CACHE=/app/cache
+      - TORCH_HOME=/app/cache
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+volumes:
+  skyreels_models:
+    driver: local
+  skyreels_outputs:
+    driver: local
+  skyreels_cache:
+    driver: local
+  skyreels_logs:
+    driver: local
+
+networks:
+  default:
+    name: skyreels-network 
