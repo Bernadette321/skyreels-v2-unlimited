@@ -1,0 +1,109 @@
+# SkyReels V2 Unlimited - 安全的.gitignore配置
+
+# ============ 敏感信息 ============
+.env
+.env.local
+.env.production
+secrets/
+*.key
+*.pem
+api_keys.txt
+credentials.json
+
+# ============ 运行时文件 ============
+outputs/
+cache/
+logs/
+results/
+models/
+*.log
+*.tmp
+
+# ============ Docker相关 ============
+.docker/
+docker-volumes/
+
+# ============ Python相关 ============
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ============ 虚拟环境 ============
+.venv
+venv/
+ENV/
+env/
+.conda/
+
+# ============ IDE相关 ============
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ============ 系统文件 ============
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ============ 大文件 ============
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+*.gif
+*.zip
+*.tar.gz
+*.rar
+
+# ============ 临时文件 ============
+temp/
+tmp/
+*.temp
+test_output/
+debug/
+
+# ============ 配置覆盖 ============
+config.local.yml
+settings.local.json
+
+# ============ Jupyter Notebook ============
+.ipynb_checkpoints
+
+# ============ 测试相关 ============
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# ============ Git相关 ============
+*.orig SkyReels-V2/

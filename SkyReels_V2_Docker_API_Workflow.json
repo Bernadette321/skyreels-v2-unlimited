@@ -1,0 +1,350 @@
+{
+  "name": "SkyReels V2 Docker API - 720P长视频生成",
+  "nodes": [
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "skyreelsEndpoint",
+              "value": "https://your-runpod-instance.runpod.net:8000"
+            },
+            {
+              "name": "storyPrompt", 
+              "value": "A mystical underwater world with bioluminescent creatures, coral reefs glowing in deep blue water, schools of colorful fish swimming gracefully, sunlight filtering through water, cinematic 720p quality"
+            },
+            {
+              "name": "videoDuration",
+              "value": "120"
+            },
+            {
+              "name": "videoResolution",
+              "value": "720p"
+            },
+            {
+              "name": "maxRetries",
+              "value": "10"
+            },
+            {
+              "name": "checkInterval",
+              "value": "30"
+            }
+          ]
+        }
+      },
+      "id": "config-node",
+      "name": "🎬 SkyReels V2 配置",
+      "type": "n8n-nodes-base.set",
+      "position": [300, 400],
+      "typeVersion": 3.3
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "🚀 手动触发",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [100, 400],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "url": "={{ $('🎬 SkyReels V2 配置').item.json.skyreelsEndpoint }}/health",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "health-check",
+      "name": "🔍 健康检查",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [500, 300],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('🎬 SkyReels V2 配置').item.json.skyreelsEndpoint }}/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": \"{{ $('🎬 SkyReels V2 配置').item.json.storyPrompt }}\",\n  \"duration\": {{ $('🎬 SkyReels V2 配置').item.json.videoDuration }},\n  \"resolution\": \"{{ $('🎬 SkyReels V2 配置').item.json.videoResolution }}\",\n  \"fps\": 30\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "start-generation",
+      "name": "🎥 开始生成视频",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [500, 400],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('🎬 SkyReels V2 配置').item.json.checkInterval }}",
+        "unit": "seconds"
+      },
+      "id": "wait-before-check",
+      "name": "⏱️ 等待检查间隔",
+      "type": "n8n-nodes-base.wait",
+      "position": [700, 400],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "url": "={{ $('🎬 SkyReels V2 配置').item.json.skyreelsEndpoint }}/status/{{ $('🎥 开始生成视频').item.json.task_id }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "check-status",
+      "name": "📊 检查状态",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [900, 400],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "if-completed",
+      "name": "✅ 完成了吗？",
+      "type": "n8n-nodes-base.if",
+      "position": [1100, 400],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "url": "={{ $('🎬 SkyReels V2 配置').item.json.skyreelsEndpoint }}/download/{{ $('🎥 开始生成视频').item.json.task_id }}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "download-video",
+      "name": "📥 下载视频",
+      "type": "n8n-nodes-base.httpRequest", 
+      "position": [1300, 300],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "failed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "if-failed",
+      "name": "❌ 失败了吗？",
+      "type": "n8n-nodes-base.if",
+      "position": [1100, 500],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "message": "❌ SkyReels V2 视频生成失败",
+        "additionalFields": {
+          "details": "=错误详情: {{ $json.error || '未知错误' }}\n任务ID: {{ $('🎥 开始生成视频').item.json.task_id }}\n提示词: {{ $('🎬 SkyReels V2 配置').item.json.storyPrompt }}"
+        }
+      },
+      "id": "error-notification",
+      "name": "📧 错误通知",
+      "type": "n8n-nodes-base.slack",
+      "position": [1300, 600],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "jsCode": "const maxRetries = parseInt($('🎬 SkyReels V2 配置').item.json.maxRetries);\nconst currentRetry = $input.all()[0].json.retry_count || 0;\n\nif (currentRetry >= maxRetries) {\n  throw new Error(`达到最大重试次数 ${maxRetries}`);\n}\n\nreturn {\n  json: {\n    retry_count: currentRetry + 1,\n    message: `重试第 ${currentRetry + 1} 次，最大 ${maxRetries} 次`\n  }\n};"
+      },
+      "id": "retry-logic",
+      "name": "🔄 重试逻辑",
+      "type": "n8n-nodes-base.code",
+      "position": [1100, 600],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "message": "🎉 SkyReels V2 视频生成完成！",
+        "additionalFields": {
+          "details": "=✅ 视频生成成功完成\n\n📋 **生成详情:**\n• 任务ID: {{ $('🎥 开始生成视频').item.json.task_id }}\n• 时长: {{ $('🎬 SkyReels V2 配置').item.json.videoDuration }}秒\n• 分辨率: {{ $('🎬 SkyReels V2 配置').item.json.videoResolution }}\n• 提示词: {{ $('🎬 SkyReels V2 配置').item.json.storyPrompt }}\n\n🎬 **处理信息:**\n• 最终状态: {{ $('📊 检查状态').item.json.status }}\n• 处理进度: {{ ($('📊 检查状态').item.json.progress * 100).toFixed(1) }}%\n\n📥 视频已准备好下载！"
+        }
+      },
+      "id": "success-notification", 
+      "name": "📧 成功通知",
+      "type": "n8n-nodes-base.slack",
+      "position": [1500, 300],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 SkyReels V2 Docker API 工作流\n\n### ✅ 支持功能:\n- 720P高质量视频输出\n- 最长720秒(12分钟)视频\n- 异步处理与状态监控\n- 自动重试机制\n- 成功/失败通知\n\n### 🔧 配置参数:\n- **skyreelsEndpoint**: Docker API地址\n- **storyPrompt**: 视频生成提示词\n- **videoDuration**: 视频时长(秒)\n- **videoResolution**: 分辨率(720p)\n- **maxRetries**: 最大重试次数\n- **checkInterval**: 状态检查间隔\n\n### 📊 API端点:\n- `/health` - 健康检查\n- `/generate` - 开始生成\n- `/status/{id}` - 状态查询\n- `/download/{id}` - 下载视频",
+        "height": 400,
+        "width": 300,
+        "color": 4
+      },
+      "id": "workflow-info",
+      "name": "📝 工作流说明",
+      "type": "n8n-nodes-base.stickyNote", 
+      "position": [100, 80],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "🚀 手动触发": {
+      "main": [
+        [
+          {
+            "node": "🎬 SkyReels V2 配置",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎬 SkyReels V2 配置": {
+      "main": [
+        [
+          {
+            "node": "🔍 健康检查",
+            "type": "main", 
+            "index": 0
+          },
+          {
+            "node": "🎥 开始生成视频",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎥 开始生成视频": {
+      "main": [
+        [
+          {
+            "node": "⏱️ 等待检查间隔",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⏱️ 等待检查间隔": {
+      "main": [
+        [
+          {
+            "node": "📊 检查状态",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 检查状态": {
+      "main": [
+        [
+          {
+            "node": "✅ 完成了吗？",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "❌ 失败了吗？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ 完成了吗？": {
+      "main": [
+        [
+          {
+            "node": "📥 下载视频",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🔄 重试逻辑",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❌ 失败了吗？": {
+      "main": [
+        [
+          {
+            "node": "📧 错误通知",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "📥 下载视频": {
+      "main": [
+        [
+          {
+            "node": "📧 成功通知", 
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔄 重试逻辑": {
+      "main": [
+        [
+          {
+            "node": "⏱️ 等待检查间隔",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {},
+  "tags": ["SkyReels", "Video Generation", "AI", "Docker"],
+  "triggerCount": 1,
+  "updatedAt": "2025-06-02T08:30:00.000Z",
+  "versionId": "2.0"
+} 

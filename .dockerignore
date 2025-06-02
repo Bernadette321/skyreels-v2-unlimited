@@ -1,0 +1,59 @@
+# Git相关
+.git
+.gitignore
+.gitattributes
+
+# 文档
+*.md
+docs/
+README*
+
+# 日志
+*.log
+logs/
+
+# 缓存和临时文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# 构建产物
+build/
+dist/
+*.egg-info/
+
+# 模型和结果目录（会通过volume挂载）
+models/
+results/
+cache/
+
+# Docker相关
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# 本地测试文件
+test_*.py
+tests/ 

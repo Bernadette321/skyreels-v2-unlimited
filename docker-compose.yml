@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  skyreels-v2:
+    build: .
+    image: skyreels-v2-720p:latest
+    container_name: skyreels-v2-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./results:/app/results
+      - ./cache:/app/cache
+    environment:
+      - PYTHONPATH=/app/SkyReels-V2
+      - HF_HOME=/app/cache
+      - TRANSFORMERS_CACHE=/app/cache
+      - TORCH_HOME=/app/cache
+      - CUDA_VISIBLE_DEVICES=-1  # 禁用GPU用于测试
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 生产环境GPU版本（在有NVIDIA GPU的环境中使用）
+  skyreels-v2-gpu:
+    build: .
+    image: skyreels-v2-720p:latest
+    container_name: skyreels-v2-gpu-api
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./models:/app/models
+      - ./results:/app/results
+      - ./cache:/app/cache
+    environment:
+      - PYTHONPATH=/app/SkyReels-V2
+      - HF_HOME=/app/cache
+      - TRANSFORMERS_CACHE=/app/cache
+      - TORCH_HOME=/app/cache
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    profiles:
+      - gpu  # 只在指定gpu profile时启动
+
+  # 可选：添加监控服务
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: skyreels-portainer
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+volumes:
+  portainer_data: 

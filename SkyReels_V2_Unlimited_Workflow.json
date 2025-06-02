@@ -1,0 +1,539 @@
+{
+  "name": "SkyReels V2 无限制长视频生成工作流",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "🚀 手动触发",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "storyPrompt",
+              "value": "A cinematic journey through a magical forest, starting at dawn and ending at sunset, showing the changing seasons and the wildlife that inhabits this mystical place"
+            },
+            {
+              "name": "videoResolution", 
+              "value": "1080p"
+            },
+            {
+              "name": "videoDuration",
+              "value": "1800"
+            },
+            {
+              "name": "videoQuality",
+              "value": "ultra"
+            },
+            {
+              "name": "videoFPS",
+              "value": "30"
+            },
+            {
+              "name": "guidanceScale",
+              "value": "7.5"
+            },
+            {
+              "name": "inferenceSteps",
+              "value": "100"
+            },
+            {
+              "name": "enableAudio",
+              "value": "true"
+            },
+            {
+              "name": "enableUpscaling",
+              "value": "false"
+            },
+            {
+              "name": "skyreelsEndpoint",
+              "value": "https://your-runpod-instance.proxy.runpod.net:8000"
+            }
+          ]
+        }
+      },
+      "id": "config-unlimited",
+      "name": "🎬 SkyReels V2 无限制配置",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $node['🎬 SkyReels V2 无限制配置'].json.skyreelsEndpoint }}/health",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "health-check",
+      "name": "🔍 健康检查",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "={{ $node['🔍 健康检查'].json.status }}",
+            "operation": "equal",
+            "rightValue": "healthy"
+          }
+        }
+      },
+      "id": "if-healthy",
+      "name": "✅ 服务健康检查",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "={{ $node['🎬 SkyReels V2 无限制配置'].json.skyreelsEndpoint }}/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $node['🎬 SkyReels V2 无限制配置'].json.storyPrompt }}"
+            },
+            {
+              "name": "resolution", 
+              "value": "={{ $node['🎬 SkyReels V2 无限制配置'].json.videoResolution }}"
+            },
+            {
+              "name": "duration",
+              "value": "={{ parseInt($node['🎬 SkyReels V2 无限制配置'].json.videoDuration) }}"
+            },
+            {
+              "name": "quality",
+              "value": "={{ $node['🎬 SkyReels V2 无限制配置'].json.videoQuality }}"
+            },
+            {
+              "name": "fps",
+              "value": "={{ parseInt($node['🎬 SkyReels V2 无限制配置'].json.videoFPS) }}"
+            },
+            {
+              "name": "guidance_scale",
+              "value": "={{ parseFloat($node['🎬 SkyReels V2 无限制配置'].json.guidanceScale) }}"
+            },
+            {
+              "name": "num_inference_steps",
+              "value": "={{ parseInt($node['🎬 SkyReels V2 无限制配置'].json.inferenceSteps) }}"
+            },
+            {
+              "name": "enable_audio",
+              "value": "={{ $node['🎬 SkyReels V2 无限制配置'].json.enableAudio === 'true' }}"
+            },
+            {
+              "name": "enable_upscaling",
+              "value": "={{ $node['🎬 SkyReels V2 无限制配置'].json.enableUpscaling === 'true' }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "start-generation",
+      "name": "🎥 启动无限制视频生成",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "id": "wait-initial",
+      "name": "⏳ 等待初始化",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $node['🎬 SkyReels V2 无限制配置'].json.skyreelsEndpoint }}/tasks/{{ $node['🎥 启动无限制视频生成'].json.task_id }}/status",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "check-status",
+      "name": "📊 检查生成状态",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "={{ $node['📊 检查生成状态'].json.status }}",
+            "operation": "equal",
+            "rightValue": "completed"
+          }
+        }
+      },
+      "id": "if-completed",
+      "name": "🎬 生成完成检查",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1780, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "={{ $node['📊 检查生成状态'].json.status }}",
+            "operation": "equal",
+            "rightValue": "failed"
+          }
+        }
+      },
+      "id": "if-failed",
+      "name": "❌ 生成失败检查",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1780, 400]
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "wait-progress",
+      "name": "⏳ 等待生成进度",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1560, 400]
+    },
+    {
+      "parameters": {
+        "url": "={{ $node['🎬 SkyReels V2 无限制配置'].json.skyreelsEndpoint }}/tasks/{{ $node['🎥 启动无限制视频生成'].json.task_id }}/download",
+        "options": {
+          "timeout": 300000,
+          "responseFormat": "file"
+        }
+      },
+      "id": "download-video",
+      "name": "⬇️ 下载生成视频",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2000, 100]
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $node['⬇️ 下载生成视频'].binary.data.fileName }}",
+          "mode": "id"
+        },
+        "options": {
+          "parentId": {
+            "__rl": true,
+            "value": "root",
+            "mode": "list",
+            "cachedResultName": "My Drive",
+            "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+          }
+        }
+      },
+      "id": "upload-to-drive",
+      "name": "☁️ 上传到Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [2220, 100]
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $node['⬇️ 下载生成视频'].binary.data.fileName }}",
+          "mode": "id"
+        },
+        "options": {
+          "parentId": {
+            "__rl": true,
+            "value": "1080p_Videos",
+            "mode": "list"
+          }
+        }
+      },
+      "id": "upload-to-drive-1080p",
+      "name": "📁 上传到1080P目录",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [2440, 100]
+    },
+    {
+      "parameters": {
+        "fromEmail": "ovepetaicontact@gmail.com",
+        "toEmail": "3478375937@qq.com",
+        "subject": "🎬 SkyReels V2 无限制视频生成完成",
+        "message": "=亲爱的用户：\n\n您的无限制视频已成功生成！\n\n📋 生成详情：\n• 提示词：{{ $node['🎬 SkyReels V2 无限制配置'].json.storyPrompt }}\n• 分辨率：{{ $node['🎬 SkyReels V2 无限制配置'].json.videoResolution }}\n• 时长：{{ Math.floor($node['🎬 SkyReels V2 无限制配置'].json.videoDuration / 60) }}分{{ $node['🎬 SkyReels V2 无限制配置'].json.videoDuration % 60 }}秒\n• 质量：{{ $node['🎬 SkyReels V2 无限制配置'].json.videoQuality }}\n• 帧率：{{ $node['🎬 SkyReels V2 无限制配置'].json.videoFPS }}fps\n• 音频：{{ $node['🎬 SkyReels V2 无限制配置'].json.enableAudio === 'true' ? '启用' : '禁用' }}\n• 超分辨率：{{ $node['🎬 SkyReels V2 无限制配置'].json.enableUpscaling === 'true' ? '启用' : '禁用' }}\n\n⏱️ 处理信息：\n• 任务ID：{{ $node['🎥 启动无限制视频生成'].json.task_id }}\n• 开始时间：{{ $node['📊 检查生成状态'].json.created_at }}\n• 完成时间：{{ $node['📊 检查生成状态'].json.updated_at }}\n• 生成进度：{{ Math.round($node['📊 检查生成状态'].json.progress * 100) }}%\n\n☁️ 存储位置：\n• Google Drive: {{ $node['📁 上传到1080P目录'].json.webViewLink }}\n\n🎥 视频已保存到您的Google Drive 1080P视频目录中。\n\n感谢使用SkyReels V2无限制视频生成服务！\n\n---\nSkyReels V2 Team",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "send-success-email",
+      "name": "📧 发送成功通知",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [2660, 100]
+    },
+    {
+      "parameters": {
+        "fromEmail": "ovepetaicontact@gmail.com",
+        "toEmail": "3478375937@qq.com",
+        "subject": "❌ SkyReels V2 视频生成失败",
+        "message": "=视频生成遇到问题：\n\n📋 任务详情：\n• 任务ID：{{ $node['🎥 启动无限制视频生成'].json.task_id }}\n• 提示词：{{ $node['🎬 SkyReels V2 无限制配置'].json.storyPrompt }}\n• 分辨率：{{ $node['🎬 SkyReels V2 无限制配置'].json.videoResolution }}\n• 时长：{{ Math.floor($node['🎬 SkyReels V2 无限制配置'].json.videoDuration / 60) }}分{{ $node['🎬 SkyReels V2 无限制配置'].json.videoDuration % 60 }}秒\n\n❌ 错误信息：\n{{ $node['📊 检查生成状态'].json.error || '未知错误' }}\n\n请检查配置并重试。",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "send-error-email",
+      "name": "📧 发送错误通知",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [2000, 500]
+    },
+    {
+      "parameters": {
+        "fromEmail": "ovepetaicontact@gmail.com",
+        "toEmail": "3478375937@qq.com",
+        "subject": "⚠️ SkyReels V2 服务不可用",
+        "message": "=SkyReels V2 API服务当前不可用。\n\n🔍 健康检查失败：\n• 端点：{{ $node['🎬 SkyReels V2 无限制配置'].json.skyreelsEndpoint }}\n• 状态：{{ $node['🔍 健康检查'].json.status || '无响应' }}\n\n请检查RunPod实例是否正常运行。",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "send-service-error",
+      "name": "📧 发送服务错误通知",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1120, 400]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "🚀 手动触发": {
+      "main": [
+        [
+          {
+            "node": "🎬 SkyReels V2 无限制配置",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎬 SkyReels V2 无限制配置": {
+      "main": [
+        [
+          {
+            "node": "🔍 健康检查",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 健康检查": {
+      "main": [
+        [
+          {
+            "node": "✅ 服务健康检查",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ 服务健康检查": {
+      "main": [
+        [
+          {
+            "node": "🎥 启动无限制视频生成",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "📧 发送服务错误通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎥 启动无限制视频生成": {
+      "main": [
+        [
+          {
+            "node": "⏳ 等待初始化",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⏳ 等待初始化": {
+      "main": [
+        [
+          {
+            "node": "📊 检查生成状态",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 检查生成状态": {
+      "main": [
+        [
+          {
+            "node": "🎬 生成完成检查",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "❌ 生成失败检查", 
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎬 生成完成检查": {
+      "main": [
+        [
+          {
+            "node": "⬇️ 下载生成视频",
+            "type": "main", 
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⏳ 等待生成进度",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❌ 生成失败检查": {
+      "main": [
+        [
+          {
+            "node": "📧 发送错误通知",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⏳ 等待生成进度",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⏳ 等待生成进度": {
+      "main": [
+        [
+          {
+            "node": "📊 检查生成状态",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⬇️ 下载生成视频": {
+      "main": [
+        [
+          {
+            "node": "☁️ 上传到Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "☁️ 上传到Google Drive": {
+      "main": [
+        [
+          {
+            "node": "📁 上传到1080P目录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📁 上传到1080P目录": {
+      "main": [
+        [
+          {
+            "node": "📧 发送成功通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "unlimited-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "skyreels-v2-unlimited"
+  },
+  "id": "skyreels-v2-unlimited-workflow",
+  "tags": [
+    {
+      "createdAt": "2024-01-20T10:00:00.000Z",
+      "updatedAt": "2024-01-20T10:00:00.000Z", 
+      "id": "skyreels",
+      "name": "SkyReels V2"
+    },
+    {
+      "createdAt": "2024-01-20T10:00:00.000Z",
+      "updatedAt": "2024-01-20T10:00:00.000Z",
+      "id": "unlimited",
+      "name": "无限制"
+    },
+    {
+      "createdAt": "2024-01-20T10:00:00.000Z", 
+      "updatedAt": "2024-01-20T10:00:00.000Z",
+      "id": "ai-video",
+      "name": "AI视频"
+    }
+  ]
+} 
