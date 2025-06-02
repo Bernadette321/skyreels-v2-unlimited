@@ -10,7 +10,7 @@ RUN pip install --timeout=600 --retries=3 accelerate>=0.20.0
 RUN pip install --timeout=800 --retries=3 diffusers>=0.18.0
 RUN pip install --timeout=600 --retries=3 fastapi uvicorn requests
 WORKDIR /app
-RUN git clone https://github.com/SkyReels/SkyReels-V2.git /app/SkyReels-V2
+RUN git clone https://github.com/SkyworkAI/SkyReels-V2.git /app/SkyReels-V2
 COPY api_server_unlimited.py /app/
 COPY start_unlimited.sh /app/
 RUN chmod +x /app/start_unlimited.sh
